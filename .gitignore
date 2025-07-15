@@ -10,8 +10,6 @@ coverage/
 # Next.js
 .next/
 out/
-build/
-dist/
 
 # Production
 *.production
