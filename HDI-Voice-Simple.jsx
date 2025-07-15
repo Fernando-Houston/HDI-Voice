@@ -256,6 +256,38 @@ const HoustonVoiceAI = () => {
   };
 
   // Enhanced address parsing
+  // Check if query is property-specific
+  const isPropertyQuery = (query) => {
+    const propertyKeywords = [
+      'property', 'house', 'home', 'address', 'street', 'avenue', 'road', 'drive',
+      'value', 'worth', 'price', 'cost', 'owner', 'sq ft', 'square feet',
+      'year built', 'built in', 'tax', 'rent', 'rental', 'bedroom', 'bathroom',
+      'garage', 'lot size', 'pool', 'school district', 'neighborhood'
+    ];
+    
+    const queryLower = query.toLowerCase();
+    
+    // Check for address pattern (number followed by text)
+    const hasAddress = /\d+\s+\w+/i.test(query);
+    
+    // Check for property keywords
+    const hasPropertyKeyword = propertyKeywords.some(keyword => 
+      queryLower.includes(keyword)
+    );
+    
+    // Check for Houston-specific locations
+    const houstonLocations = [
+      'houston', 'katy', 'sugar land', 'woodlands', 'cypress', 'pearland',
+      'energy corridor', 'memorial', 'river oaks', 'heights', 'montrose'
+    ];
+    
+    const hasLocation = houstonLocations.some(location => 
+      queryLower.includes(location)
+    );
+    
+    return hasAddress || (hasPropertyKeyword && hasLocation) || hasPropertyKeyword;
+  };
+
   const enhanceAddressQuery = (query) => {
     // Common speech-to-text corrections for Houston streets
     const corrections = {
