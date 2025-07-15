@@ -59,7 +59,7 @@ import('./test-api-endpoints.js').then(m => m.runAllTests())
 ## 🔧 Configuration
 
 Your ElevenLabs credentials:
-- API Key: `sk_bd5f7cafdababd4ba8a2d2f03bee04a9327c564831b342e3`
+- API Key: Set in Vercel environment variables
 - Voice ID: `Z3R5wn05IrDiVCyEkUrK`
 
 ## 📖 Documentation

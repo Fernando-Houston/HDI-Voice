@@ -8,7 +8,7 @@
 cp .env.local.example .env.local
 
 # Your .env.local should contain:
-ELEVENLABS_API_KEY=sk_bd5f7cafdababd4ba8a2d2f03bee04a9327c564831b342e3
+ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
 NEXT_PUBLIC_ELEVENLABS_VOICE_ID=Z3R5wn05IrDiVCyEkUrK
 NEXT_PUBLIC_HDI_API_URL=https://hdi-api-production.up.railway.app
 ```

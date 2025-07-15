@@ -28,7 +28,7 @@ export default async function handler(req, res) {
       headers: {
         'Accept': 'audio/mpeg',
         'Content-Type': 'application/json',
-        'xi-api-key': process.env.ELEVENLABS_API_KEY || 'sk_bd5f7cafdababd4ba8a2d2f03bee04a9327c564831b342e3'
+        'xi-api-key': process.env.ELEVENLABS_API_KEY
       },
       body: JSON.stringify({
         text: text,

@@ -8,7 +8,7 @@ Add these in your Vercel Dashboard → Project Settings → Environment Variable
 
 ```bash
 # Server-side only (keeps your API key secure)
-ELEVENLABS_API_KEY=sk_bd5f7cafdababd4ba8a2d2f03bee04a9327c564831b342e3
+ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
 
 # Client-side (safe to expose)
 NEXT_PUBLIC_ELEVENLABS_VOICE_ID=Z3R5wn05IrDiVCyEkUrK
