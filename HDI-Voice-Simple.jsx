@@ -320,22 +320,51 @@ const HoustonVoiceAI = () => {
       // Speak the response
       await speakWithElevenLabs(response);
       
-      // Try the actual API call through proxy to avoid CORS
+      // Try the actual API call - CORS is now fixed!
       try {
-        console.log('Calling HDI API with query:', enhancedQuery);
-        const apiResponse = await fetchWithTimeout('/api/hdi-proxy', {
+        // First, try voice search if it looks like an address
+        if (isPropertyQuery(enhancedQuery)) {
+          console.log('Trying voice search for:', enhancedQuery);
+          
+          try {
+            const voiceSearchResponse = await fetchWithTimeout(`${API_CONFIG.HDI_BASE_URL}/api/v1/properties/voice-search`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Origin': 'https://hdi-voice.vercel.app'
+              },
+              body: JSON.stringify({
+                spoken_text: enhancedQuery
+              })
+            }, 15000);
+            
+            if (voiceSearchResponse.ok) {
+              const properties = await voiceSearchResponse.json();
+              console.log('Voice search found:', properties);
+              
+              if (properties && properties.length > 0) {
+                const prop = properties[0];
+                const propertyResponse = `I found the property at ${prop.address || prop.full_address}. ${prop.owner ? `It's owned by ${prop.owner}.` : ''} ${prop.market_value ? `The market value is $${prop.market_value.toLocaleString()}.` : ''} ${prop.lot_size ? `The lot size is ${prop.lot_size} square feet.` : ''}`;
+                setAiResponse(propertyResponse);
+                await speakWithElevenLabs(propertyResponse);
+                return;
+              }
+            }
+          } catch (voiceError) {
+            console.log('Voice search failed, trying AI chat:', voiceError);
+          }
+        }
+        
+        // Fall back to AI chat for general questions
+        console.log('Using AI chat for:', enhancedQuery);
+        const apiResponse = await fetchWithTimeout(`${API_CONFIG.HDI_BASE_URL}/api/v1/properties/ask`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Origin': 'https://hdi-voice.vercel.app'
           },
           body: JSON.stringify({
-            endpoint: '/api/v1/properties/ask',
-            question: enhancedQuery,
-            search_web: true,
-            context: {
-              type: 'property_search',
-              location: 'Houston, TX'
-            }
+            question: enhancedQuery
           })
         }, 25000); // 25 second timeout
         
