@@ -38,6 +38,9 @@ const API_CONFIG = {
   RETRY_DELAY: 1000 // 1 second
 };
 
+// Check if window is defined (for SSR)
+const isBrowser = typeof window !== 'undefined';
+
 const HoustonVoiceAI = () => {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -222,6 +225,11 @@ const HoustonVoiceAI = () => {
 
   // Web Speech API integration with mobile support
   const startVoiceRecognition = () => {
+    if (!isBrowser) {
+      setError('Voice recognition requires a browser environment.');
+      return;
+    }
+    
     // Check for both webkit and standard SpeechRecognition
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
