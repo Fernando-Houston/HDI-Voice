@@ -32,7 +32,6 @@ import {
 // Configuration
 const API_CONFIG = {
   HDI_BASE_URL: process.env.NEXT_PUBLIC_HDI_API_URL || 'https://hdi-api-production.up.railway.app',
-  ELEVENLABS_API_KEY: process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY || 'sk_bd5f7cafdababd4ba8a2d2f03bee04a9327c564831b342e3',
   ELEVENLABS_VOICE_ID: process.env.NEXT_PUBLIC_ELEVENLABS_VOICE_ID || 'Z3R5wn05IrDiVCyEkUrK',
   REQUEST_TIMEOUT: 30000, // 30 seconds
   MAX_RETRIES: 3,
@@ -161,22 +160,21 @@ const HoustonVoiceAI = () => {
     }
   };
 
-  // ElevenLabs TTS integration
+  // ElevenLabs TTS integration using secure API route
   const speakWithElevenLabs = async (text) => {
     try {
       setIsSpeaking(true);
       
-      const response = await fetchWithTimeout('https://api.elevenlabs.io/v1/text-to-speech/' + API_CONFIG.ELEVENLABS_VOICE_ID, {
+      const response = await fetchWithTimeout('/api/elevenlabs-tts', {
         method: 'POST',
         headers: {
-          'Accept': 'audio/mpeg',
           'Content-Type': 'application/json',
-          'xi-api-key': API_CONFIG.ELEVENLABS_API_KEY
         },
         body: JSON.stringify({
           text: text,
-          model_id: 'eleven_monolingual_v1',
-          voice_settings: {
+          voiceId: API_CONFIG.ELEVENLABS_VOICE_ID,
+          modelId: 'eleven_monolingual_v1',
+          voiceSettings: {
             stability: 0.5,
             similarity_boost: 0.5,
             style: 0.0,
@@ -222,20 +220,24 @@ const HoustonVoiceAI = () => {
     }
   };
 
-  // Web Speech API integration
+  // Web Speech API integration with mobile support
   const startVoiceRecognition = () => {
-    if (!('webkitSpeechRecognition' in window)) {
+    // Check for both webkit and standard SpeechRecognition
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
       setError('Voice recognition is not supported in your browser. Please use Chrome or Safari.');
       return;
     }
 
     setError('');
-    const recognition = new webkitSpeechRecognition();
+    const recognition = new SpeechRecognition();
     recognitionRef.current = recognition;
     
     recognition.continuous = false;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
+    recognition.maxAlternatives = 1;
     
     recognition.onstart = () => {
       setIsListening(true);
