@@ -195,7 +195,12 @@ const HoustonVoiceAI = () => {
     recognition.continuous = false;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
-    recognition.maxAlternatives = 1;
+    recognition.maxAlternatives = 3; // Get multiple interpretations
+    
+    // Mobile-specific optimizations
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      recognition.continuous = true; // Keep listening on mobile
+    }
     
     recognition.onstart = () => {
       setIsListening(true);
@@ -245,6 +250,52 @@ const HoustonVoiceAI = () => {
     }
   };
 
+  // Enhanced address parsing
+  const enhanceAddressQuery = (query) => {
+    // Common speech-to-text corrections for Houston streets
+    const corrections = {
+      'for': 'four', '4': 'four',
+      'to': 'two', '2': 'two', 
+      'too': 'two',
+      'ate': 'eight', '8': 'eight',
+      'won': 'one', '1': 'one',
+      'tree': 'three', '3': 'three',
+      'sex': 'six', '6': 'six',
+      'nein': 'nine', '9': 'nine',
+      'owen': 'owen', // Common street name
+      'main': 'main',
+      'oak': 'oak',
+      'joey': 'zoe', 'zoey': 'zoe', 'so we': 'zoe', 'soe': 'zoe',
+      'strait': 'street', 'st': 'street',
+      'rode': 'road', 'rd': 'road',
+      'doctor': 'drive', 'dr': 'drive',
+      'avenue': 'avenue', 'ave': 'avenue'
+    };
+    
+    let enhanced = query.toLowerCase();
+    
+    // Apply corrections
+    Object.entries(corrections).forEach(([wrong, right]) => {
+      enhanced = enhanced.replace(new RegExp(`\\b${wrong}\\b`, 'gi'), right);
+    });
+    
+    // Format numbers properly (e.g., "nine two four" -> "924")
+    enhanced = enhanced
+      .replace(/\b(one|two|three|four|five|six|seven|eight|nine|zero)\s+(one|two|three|four|five|six|seven|eight|nine|zero)\s+(one|two|three|four|five|six|seven|eight|nine|zero)\b/gi, (match) => {
+        const numbers = { one: '1', two: '2', three: '3', four: '4', five: '5', six: '6', seven: '7', eight: '8', nine: '9', zero: '0' };
+        return match.split(' ').map(word => numbers[word.toLowerCase()] || word).join('');
+      })
+      .replace(/\b(one|two|three|four|five|six|seven|eight|nine|zero)\s+(one|two|three|four|five|six|seven|eight|nine|zero)\b/gi, (match) => {
+        const numbers = { one: '1', two: '2', three: '3', four: '4', five: '5', six: '6', seven: '7', eight: '8', nine: '9', zero: '0' };
+        return match.split(' ').map(word => numbers[word.toLowerCase()] || word).join('');
+      });
+    
+    console.log('Original query:', query);
+    console.log('Enhanced query:', enhanced);
+    
+    return enhanced;
+  };
+
   const processVoiceQuery = async (query) => {
     console.log('Processing query:', query);
     setIsListening(false);
@@ -252,11 +303,14 @@ const HoustonVoiceAI = () => {
     setError('');
     
     try {
+      // Enhance the query for better address recognition
+      const enhancedQuery = enhanceAddressQuery(query);
+      
       // For now, use a simple response to test voice output
-      const response = `I heard you say: "${query}". Let me search for that information in the Houston property database.`;
+      const response = `I heard: "${query}". Enhanced to: "${enhancedQuery}". Let me search for that in the Houston property database.`;
       
       setAiResponse(response);
-      setConversationHistory(prev => [...prev, { query, response, timestamp: new Date() }]);
+      setConversationHistory(prev => [...prev, { query: enhancedQuery, response, timestamp: new Date() }]);
       
       // Speak the response
       await speakWithElevenLabs(response);
@@ -473,6 +527,11 @@ const HoustonVoiceAI = () => {
               <div className="space-y-2">
                 <h2 className="text-2xl font-bold text-white">Ready to Help</h2>
                 <p className="text-gray-400">Tap the mic to ask about Houston real estate</p>
+                <div className="mt-4 text-xs text-gray-500 max-w-sm mx-auto">
+                  <p className="mb-1">📍 For addresses, try saying:</p>
+                  <p>"Nine two four Zoe Street" (spell out numbers)</p>
+                  <p>"Find property at nine twenty four Zoe"</p>
+                </div>
               </div>
             )}
           </div>
