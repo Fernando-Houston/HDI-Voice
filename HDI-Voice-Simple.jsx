@@ -26,7 +26,9 @@ import {
   Brain,
   Settings,
   Info,
-  AlertCircle
+  AlertCircle,
+  Keyboard,
+  X
 } from 'lucide-react';
 
 // Configuration
@@ -48,10 +50,12 @@ const HoustonVoiceAI = () => {
   const [error, setError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [textInput, setTextInput] = useState('');
+  const [showKeyboard, setShowKeyboard] = useState(false);
   
   const [audioWaveform, setAudioWaveform] = useState(Array(20).fill(0));
   const recognitionRef = useRef(null);
   const currentAudioRef = useRef(null);
+  const textInputRef = useRef(null);
 
   // Simulate voice level animation
   useEffect(() => {
@@ -567,22 +571,68 @@ const HoustonVoiceAI = () => {
             )}
           </div>
 
+          {/* Mobile Keyboard Toggle */}
+          <div className="mb-4 flex justify-center md:hidden">
+            <button
+              onClick={() => {
+                setShowKeyboard(!showKeyboard);
+                if (!showKeyboard) {
+                  setTimeout(() => {
+                    textInputRef.current?.focus();
+                  }, 100);
+                }
+              }}
+              className="flex items-center space-x-2 px-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white hover:bg-gray-700/50 transition-all"
+            >
+              {showKeyboard ? (
+                <>
+                  <X className="w-4 h-4" />
+                  <span>Hide Keyboard</span>
+                </>
+              ) : (
+                <>
+                  <Keyboard className="w-4 h-4" />
+                  <span>Type Search</span>
+                </>
+              )}
+            </button>
+          </div>
+
           {/* Text Input for Testing */}
-          <div className="mb-6 max-w-md mx-auto">
+          <div className={`mb-6 max-w-md mx-auto transition-all duration-300 ${
+            showKeyboard ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none md:opacity-100 md:translate-y-0 md:pointer-events-auto'
+          }`}>
             <form onSubmit={(e) => {
               e.preventDefault();
               if (textInput.trim()) {
                 processVoiceQuery(textInput);
                 setTextInput('');
+                setShowKeyboard(false);
               }
             }} className="flex gap-2">
               <input
+                ref={textInputRef}
                 type="text"
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
                 placeholder="Type to test search (e.g., 924 Zoe Street)"
                 disabled={isProcessing || isListening || isSpeaking}
-                className="flex-1 px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 disabled:opacity-50"
+                className="flex-1 px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 disabled:opacity-50 text-base"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
+                inputMode="text"
+                enterKeyHint="search"
+                onFocus={(e) => {
+                  // Ensure keyboard shows on mobile
+                  e.target.setAttribute('readonly', 'false');
+                  if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                    setTimeout(() => {
+                      e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 300);
+                  }
+                }}
               />
               <button
                 type="submit"
