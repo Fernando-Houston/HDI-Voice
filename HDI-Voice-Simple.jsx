@@ -47,6 +47,7 @@ const HoustonVoiceAI = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [textInput, setTextInput] = useState('');
   
   const [audioWaveform, setAudioWaveform] = useState(Array(20).fill(0));
   const recognitionRef = useRef(null);
@@ -317,26 +318,55 @@ const HoustonVoiceAI = () => {
       
       // Try the actual API call
       try {
+        console.log('Calling HDI API with query:', enhancedQuery);
         const apiResponse = await fetchWithTimeout(`${API_CONFIG.HDI_BASE_URL}/api/v1/properties/ask`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            question: query,
-            search_web: false
+            question: enhancedQuery,
+            search_web: true,
+            context: {
+              type: 'property_search',
+              location: 'Houston, TX'
+            }
           })
-        }, 20000); // 20 second timeout
+        }, 25000); // 25 second timeout
+        
+        console.log('API Response status:', apiResponse.status);
         
         if (apiResponse.ok) {
           const data = await apiResponse.json();
-          const realResponse = data.response || data.answer || 'No response received.';
+          console.log('API Response data:', data);
+          
+          const realResponse = data.response || data.answer || data.message || 'No response received from API.';
           setAiResponse(realResponse);
+          
+          // Update conversation with real response
+          setConversationHistory(prev => {
+            const updated = [...prev];
+            if (updated.length > 0) {
+              updated[updated.length - 1].response = realResponse;
+            }
+            return updated;
+          });
+          
+          // Speak the real response
           await speakWithElevenLabs(realResponse);
+        } else {
+          const errorText = await apiResponse.text();
+          console.error('API error response:', errorText);
+          const errorMessage = `API returned error ${apiResponse.status}. ${errorText || 'Please try again.'}`;
+          setAiResponse(errorMessage);
+          setError(errorMessage);
         }
       } catch (apiError) {
         console.error('API call failed:', apiError);
-        // Keep the initial response if API fails
+        const errorMsg = `API Error: ${apiError.message}. The property database might be loading, please try again in a moment.`;
+        setAiResponse(errorMsg);
+        setError(errorMsg);
+        await speakWithElevenLabs(errorMsg);
       }
       
     } catch (error) {
@@ -534,6 +564,36 @@ const HoustonVoiceAI = () => {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Text Input for Testing */}
+          <div className="mb-6 max-w-md mx-auto">
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (textInput.trim()) {
+                processVoiceQuery(textInput);
+                setTextInput('');
+              }
+            }} className="flex gap-2">
+              <input
+                type="text"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                placeholder="Type to test search (e.g., 924 Zoe Street)"
+                disabled={isProcessing || isListening || isSpeaking}
+                className="flex-1 px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 disabled:opacity-50"
+              />
+              <button
+                type="submit"
+                disabled={isProcessing || isListening || isSpeaking || !textInput.trim()}
+                className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                Search
+              </button>
+            </form>
+            <p className="text-xs text-gray-500 mt-2 text-center">
+              Type your search to test the API and voice response
+            </p>
           </div>
 
           {/* Voice Controls */}
