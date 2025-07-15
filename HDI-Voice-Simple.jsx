@@ -316,15 +316,16 @@ const HoustonVoiceAI = () => {
       // Speak the response
       await speakWithElevenLabs(response);
       
-      // Try the actual API call
+      // Try the actual API call through proxy to avoid CORS
       try {
         console.log('Calling HDI API with query:', enhancedQuery);
-        const apiResponse = await fetchWithTimeout(`${API_CONFIG.HDI_BASE_URL}/api/v1/properties/ask`, {
+        const apiResponse = await fetchWithTimeout('/api/hdi-proxy', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
+            endpoint: '/api/v1/properties/ask',
             question: enhancedQuery,
             search_web: true,
             context: {
